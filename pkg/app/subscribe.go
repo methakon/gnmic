@@ -84,7 +84,12 @@ func (a *App) SubscribeRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	numInputs := len(a.Config.Inputs)
-	if len(subCfg) == 0 && numInputs == 0 {
+	// A loader provides targets and subscriptions of its own, so a clustered
+	// instance whose config carries a loader but no static subscriptions or inputs
+	// is a valid configuration: it starts, becomes leader, and collects whatever
+	// the loader publishes. Rejecting it here stopped the loader from ever
+	// starting, since this check runs before startLoader.
+	if len(subCfg) == 0 && numInputs == 0 && len(a.Config.Loader) == 0 {
 		return errors.New("no subscriptions or inputs configuration found")
 	}
 	// only once mode subscriptions requested
